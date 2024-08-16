@@ -15,6 +15,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     var navButtons: [NSButton] = []
     
     var noImagesLabel: NSTextField!
+    var folderIcon:NSImage!
     
     // Buttons
     var openFolderButton: NSButton!
@@ -128,6 +129,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         ])
     }
     
+    
     private func initializeNavigationButtons(){
         previousButton = NSButton(title: "Previous", target: self, action: #selector(moveToPreviousImage))
         nextButton = NSButton(title: "Next", target: self, action: #selector(moveToNextImage))
@@ -216,6 +218,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         dialog.canChooseDirectories = true
         dialog.canChooseFiles = false
         dialog.allowsMultipleSelection = false
+        
         
         if dialog.runModal() == .OK {
             if let url = dialog.url {
@@ -480,7 +483,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         setNavigationVisible(isHidden: true, buttons: navButtons)
         chooseButton.isHidden = false
     }
-    
+
 }
 
 

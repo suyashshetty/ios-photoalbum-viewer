@@ -19,6 +19,7 @@
 		45364DF62C6F17DD00740896 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 45364DF52C6F17DD00740896 /* .gitignore */; };
 		45364DF82C6F1F8C00740896 /* CoreImageViewerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364DF72C6F1F8C00740896 /* CoreImageViewerTests.swift */; };
 		45364E002C6F61F500740896 /* ZoomModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364DFF2C6F61F500740896 /* ZoomModule.swift */; };
+		45364E0A2C6FD2A800740896 /* RecentFoldersModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364E092C6FD2A800740896 /* RecentFoldersModule.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +56,7 @@
 		45364DF52C6F17DD00740896 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		45364DF72C6F1F8C00740896 /* CoreImageViewerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreImageViewerTests.swift; sourceTree = "<group>"; };
 		45364DFF2C6F61F500740896 /* ZoomModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomModule.swift; sourceTree = "<group>"; };
+		45364E092C6FD2A800740896 /* RecentFoldersModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentFoldersModule.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +116,7 @@
 				45364DF12C6F05D100740896 /* CoreImageViewerWrapper.swift */,
 				45364DF32C6F096B00740896 /* ImageViewerModule.swift */,
 				45364DFF2C6F61F500740896 /* ZoomModule.swift */,
+				45364E092C6FD2A800740896 /* RecentFoldersModule.swift */,
 			);
 			path = PhotoAlbumViewer;
 			sourceTree = "<group>";
@@ -275,6 +278,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				45364E0A2C6FD2A800740896 /* RecentFoldersModule.swift in Sources */,
 				45364E002C6F61F500740896 /* ZoomModule.swift in Sources */,
 				45364DF02C6EFEC800740896 /* CoreImageViewer.swift in Sources */,
 				45364DF42C6F096B00740896 /* ImageViewerModule.swift in Sources */,
