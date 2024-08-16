@@ -17,6 +17,8 @@
 		45364DF22C6F05D100740896 /* CoreImageViewerWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364DF12C6F05D100740896 /* CoreImageViewerWrapper.swift */; };
 		45364DF42C6F096B00740896 /* ImageViewerModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364DF32C6F096B00740896 /* ImageViewerModule.swift */; };
 		45364DF62C6F17DD00740896 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 45364DF52C6F17DD00740896 /* .gitignore */; };
+		45364DF82C6F1F8C00740896 /* CoreImageViewerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364DF72C6F1F8C00740896 /* CoreImageViewerTests.swift */; };
+		45364E002C6F61F500740896 /* ZoomModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364DFF2C6F61F500740896 /* ZoomModule.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +53,8 @@
 		45364DF12C6F05D100740896 /* CoreImageViewerWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreImageViewerWrapper.swift; sourceTree = "<group>"; };
 		45364DF32C6F096B00740896 /* ImageViewerModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageViewerModule.swift; sourceTree = "<group>"; };
 		45364DF52C6F17DD00740896 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		45364DF72C6F1F8C00740896 /* CoreImageViewerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreImageViewerTests.swift; sourceTree = "<group>"; };
+		45364DFF2C6F61F500740896 /* ZoomModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomModule.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -109,6 +113,7 @@
 				45364DCB2C6EFDEF00740896 /* Preview Content */,
 				45364DF12C6F05D100740896 /* CoreImageViewerWrapper.swift */,
 				45364DF32C6F096B00740896 /* ImageViewerModule.swift */,
+				45364DFF2C6F61F500740896 /* ZoomModule.swift */,
 			);
 			path = PhotoAlbumViewer;
 			sourceTree = "<group>";
@@ -125,6 +130,7 @@
 			isa = PBXGroup;
 			children = (
 				45364DD62C6EFDEF00740896 /* PhotoAlbumViewerTests.swift */,
+				45364DF72C6F1F8C00740896 /* CoreImageViewerTests.swift */,
 			);
 			path = PhotoAlbumViewerTests;
 			sourceTree = "<group>";
@@ -269,6 +275,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				45364E002C6F61F500740896 /* ZoomModule.swift in Sources */,
 				45364DF02C6EFEC800740896 /* CoreImageViewer.swift in Sources */,
 				45364DF42C6F096B00740896 /* ImageViewerModule.swift in Sources */,
 				45364DF22C6F05D100740896 /* CoreImageViewerWrapper.swift in Sources */,
@@ -280,6 +287,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				45364DF82C6F1F8C00740896 /* CoreImageViewerTests.swift in Sources */,
 				45364DD72C6EFDEF00740896 /* PhotoAlbumViewerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -361,6 +369,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.5;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -416,6 +425,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.5;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -426,12 +436,16 @@
 		45364DE72C6EFDEF00740896 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = PhotoAlbumViewer/PhotoAlbumViewer.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PhotoAlbumViewer/Preview Content\"";
+				DEVELOPMENT_TEAM = 8PWC3VD6T7;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -451,6 +465,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.suyash.app.PhotoAlbumViewer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -462,12 +477,16 @@
 		45364DE82C6EFDEF00740896 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = PhotoAlbumViewer/PhotoAlbumViewer.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PhotoAlbumViewer/Preview Content\"";
+				DEVELOPMENT_TEAM = 8PWC3VD6T7;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -487,6 +506,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.suyash.app.PhotoAlbumViewer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;

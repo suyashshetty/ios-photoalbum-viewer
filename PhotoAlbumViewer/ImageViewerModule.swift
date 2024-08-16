@@ -9,5 +9,6 @@ import Cocoa
 
 protocol ImageViewerModule {
     func handleKeyEvent(_ event: NSEvent, in imageView: NSImageView)
+    func addButton(to view: NSView, target: Any, action: Selector)
 }
 
