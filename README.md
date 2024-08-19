@@ -5,6 +5,7 @@ A macOS photo viewer app developed in Swift using Cocoa. This app allows users t
 ## Features
 
 - **Open and View Images:** Select a folder containing images and view them in sequence.
+- **Scan Directory:** Recursively scan a directory for folders containing images and choose one to view.
 - **Navigation:**
   - Navigate between images using arrow keys or mouse scroll.
   - Use "Previous" and "Next" buttons for navigation.
@@ -17,8 +18,8 @@ A macOS photo viewer app developed in Swift using Cocoa. This app allows users t
 - **Move to Trash:** Move the current image to the trash with confirmation.
 - **Keyboard Shortcuts:**
   - `Delete` to move the current image to the trash.
-  - `Command + c` to close the current folder.
-  - `Command + o` to open a new folder.
+  - `Command + C` to close the current folder.
+  - `Command + O` to open a new folder.
   - Future functionality with `Command` key.
 - **Dynamic Window Resizing:** The window size is set to 80% of the current display's size when opening a folder.
 - **Empty Folder Handling:** Displays a "No images found" message if the selected folder contains no images.
@@ -49,19 +50,23 @@ A macOS photo viewer app developed in Swift using Cocoa. This app allows users t
 ## Usage
 
 1. **Open Folder:**
-    - Click the "Open Folder" button or press `Command + O` to choose folder containing images
+    - Click the "Open Folder" button or press `Command + O` to choose a folder containing images.
     - Only images with the extensions `jpg`, `jpeg`, `png`, and `gif` are supported.
 
-2. **Navigate Images:**
+2. **Scan Directory:**
+    - Click the "Scan Directory" button to scan a directory recursively for folders containing images.
+    - A dropdown menu will appear with the list of folders found. Select one to load the images.
+
+3. **Navigate Images:**
     - Use the "Previous" and "Next" buttons or arrow keys to navigate through the images.
     - Scroll the mouse wheel to navigate as well.
 
-3. **Zoom and Pan:**
+4. **Zoom and Pan:**
     - Hold `Ctrl` and scroll the mouse wheel to zoom in and out of images.
     - Click and drag to pan across the zoomed image.
     - Double-click to reset the image to its original size.
 
-4. **Move to Trash:**
+5. **Move to Trash:**
     - Use the "Trash" button or press `Delete`/`Backspace` to move the current image to the trash with confirmation.
   
 6. **Close Folder:**
@@ -70,7 +75,8 @@ A macOS photo viewer app developed in Swift using Cocoa. This app allows users t
 ## Implementation Details
 
 - **CoreImageViewer Class:** Manages the main functionalities, including image loading, displaying, navigation, zooming, and panning.
-- **NSWindowDelegate:** Handles window close events to terminate the application.
+- **ImageFolderScanModule Class:** Handles the directory scanning functionality to find folders containing images.
+- **DropdownDisplayModule Class:** Manages the dropdown menu displaying the results of the directory scan.
 - **ZoomModule Class:** Handles zooming and panning functionality.
 - **Keyboard Shortcuts:** Manages key press events for navigation and other actions.
 - **Dynamic Window Resizing:** Adjusts window size based on the current display's size.
