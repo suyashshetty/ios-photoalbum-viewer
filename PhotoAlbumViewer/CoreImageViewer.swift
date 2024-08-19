@@ -199,7 +199,6 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         button.attributedTitle = NSAttributedString(
             string: button.title,
             attributes: [
-                .foregroundColor: NSColor.white,
                 .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
             ]
         )
