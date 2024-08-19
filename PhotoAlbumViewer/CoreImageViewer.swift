@@ -13,12 +13,14 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     var currentIndex: Int = 0
     var modules: [ImageViewerModule] = []
     var navButtons: [NSButton] = []
+    var homeButtons:[NSButton] = []
     
     var noImagesLabel: NSTextField!
     var folderIcon:NSImage!
     
     // Buttons
     var openFolderButton: NSButton!
+    var scanDirectoryButton: NSButton!
     var nextButton: NSButton!
     var previousButton: NSButton!
     var closeButton: NSButton!
@@ -31,6 +33,8 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     private let debounceDelay: TimeInterval = 0.2
     private var resizeTimer: Timer?
     private var zoomModule: ZoomModule?
+    private var imageFolderScanner: ImageFolderScanModule?
+    private var dropdownModule: DropdownDisplayModule!
     
     override func viewWillAppear() {
         super.viewWillAppear()
@@ -54,7 +58,6 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     
     override func viewDidAppear() {
         super.viewDidAppear()
-        self.view.window?.makeFirstResponder(self)
     }
     
     override func viewDidLayout() {
@@ -83,14 +86,8 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         imageView.autoresizingMask = [.width, .height]
         self.view.addSubview(imageView)
         
-        //Initialize error message label when no images are found
-        initializeNoImageLabel()
-        
-        // Initialize the "Open Folder" button
-        initializeOpenFolderButton()
-        
-        // Initialize the navigation buttons
-        initializeNavigationButtons()
+        //Initialize UI components
+        initUIComponents()
         
         // Add a double-click gesture recognizer to reload the image
         let doubleClickRecognizer = NSClickGestureRecognizer(target: self, action: #selector(reloadImageOriginal))
@@ -99,6 +96,27 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         
         // Initialize the ZoomModule
         zoomModule = ZoomModule(imageView: imageView)
+        imageFolderScanner = ImageFolderScanModule()
+        dropdownModule = DropdownDisplayModule()
+    }
+    
+    private func initUIComponents(){
+        //Initialize error message label when no images are found
+        initializeNoImageLabel()
+        
+        // Initialize the "Open Folder" button
+        initializeOpenFolderButton()
+        
+        // Initialize the "Open Folder" button
+        initializeScanDirectoryButton()
+        
+        setupButtonsView()
+        
+        // Initialize the navigation buttons
+        initializeNavigationButtons()
+        
+        //Initialize dropdown view
+        initializeDropDown()
     }
     
     private func initializeNoImageLabel(){
@@ -127,9 +145,37 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
             openFolderButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
             openFolderButton.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
         ])
+        homeButtons.append(openFolderButton);
     }
     
+    private func initializeScanDirectoryButton(){
+        // Initialize the "Scan Directory" button
+        scanDirectoryButton = NSButton(title: "Scan Directory", target: self, action: #selector(scanDirectory))
+        scanDirectoryButton.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(scanDirectoryButton)
+        homeButtons.append(scanDirectoryButton); //debug pending
+    }
     
+    private func setupButtonsView() {
+
+        // Create a horizontal stack view to hold the buttons
+        let buttonStackView = NSStackView(views: homeButtons)
+        buttonStackView.orientation = .horizontal
+        buttonStackView.distribution = .equalSpacing
+        buttonStackView.alignment = .centerY
+        buttonStackView.spacing = 20
+        buttonStackView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Add the stack view to the view
+        view.addSubview(buttonStackView)
+
+        // Position the button stack view at the top of the view
+        NSLayoutConstraint.activate([
+            buttonStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            buttonStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 100)
+        ])
+    }
+
     private func initializeNavigationButtons(){
         previousButton = NSButton(title: "Previous", target: self, action: #selector(moveToPreviousImage))
         nextButton = NSButton(title: "Next", target: self, action: #selector(moveToNextImage))
@@ -160,7 +206,6 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
             button.isHidden = isHidden
         }
     }
-    
     
     private func positionButtons(buttons: [NSButton]) {
         let buttonCount = buttons.count
@@ -204,12 +249,42 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         )
     }
     
-    private func setNavigationVisible(isHidden: Bool, buttons: [NSButton]) {
+    private func setVisibility(isHidden: Bool, buttons: [NSButton]) {
         for button in buttons {
             button.isHidden = isHidden
         }
     }
     
+    private func initializeDropDown(){
+        // Initialize the dropdown module and add it to the view
+        dropdownModule = DropdownDisplayModule()
+        dropdownModule.initializeDropdown(in: self.view)
+
+        // Set constraints for dropdown below the buttons
+        dropdownModule?.dropdown.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            dropdownModule.dropdown.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            dropdownModule.dropdown.topAnchor.constraint(equalTo: scanDirectoryButton.bottomAnchor, constant: 20),
+            dropdownModule.dropdown.widthAnchor.constraint(equalToConstant: 300)
+        ])
+        
+        // Set visibility based on the number of items in the dropdown
+        dropdownModule.dropdown.isHidden = dropdownModule.dropdown.numberOfItems <= 1
+        dropdownModule.dropdown.action = #selector(dropdownSelectionChanged(_:))
+    }
+    
+    @objc func dropdownSelectionChanged(_ sender: NSPopUpButton) {
+        if let selectedItem = sender.selectedItem {
+            let encodedPath = selectedItem.title.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? selectedItem.title
+            let fullPath = "file:///\(encodedPath)"
+            if let url = URL(string: fullPath) {
+                print("User selected debug: \(selectedItem.title), \(url)")
+                openFolderPath(at: url)
+            } else {
+                print("Invalid URL")
+            }
+        }
+    }
     
     @objc func openFolder() {
         let dialog = NSOpenPanel()
@@ -225,9 +300,15 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
                 loadImages(from: url)
                 
                 // Hide the "Open Folder" button and show navigation buttons
-                openFolderButton?.isHidden = true
-                setNavigationVisible(isHidden: false, buttons: navButtons)
+                setVisibility(isHidden: true, buttons: homeButtons)
+                setVisibility(isHidden: false, buttons: navButtons)
+                dropdownModule.hideDropDown(in: self.view)
             }
+        }
+        
+        // Set CoreImageViewer as the first responder
+        DispatchQueue.main.async {
+                self.view.window?.makeFirstResponder(self)
         }
     }
     
@@ -235,9 +316,16 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         // Clear the images and show the "Open Folder" button again
         imagePaths = []
         imageView.image = nil
-        openFolderButton?.isHidden = false
-        setNavigationVisible(isHidden: true, buttons: navButtons)
+        
+        setVisibility(isHidden: false, buttons: homeButtons)
+        setVisibility(isHidden: true, buttons: navButtons)
         noImagesLabel?.isHidden = true
+        dropdownModule.showDropDown(in : self.view)
+        
+        // Unset CoreImageViewer as the first responder
+        DispatchQueue.main.async {
+            self.view.window?.makeFirstResponder(nil)
+        }
     }
     
     // Load image files from the selected folder in a background thread
@@ -246,7 +334,8 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
             let fileManager = FileManager.default
             do {
                 let files = try fileManager.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
-                let filteredPaths = files.filter { ["jpg", "jpeg", "png", "gif"].contains($0.pathExtension.lowercased()) }.map { $0.path }
+                let filteredPaths = files.filter { self.imageFolderScanner?.imageExtensions.contains($0.pathExtension.lowercased()) ?? false }.map { $0.path }
+
                 
                 DispatchQueue.main.async {
                     if filteredPaths.isEmpty {
@@ -371,6 +460,11 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
                 moveToNextImage()
             }
         }
+        
+        // Check if the currentIndex has reached the last image
+        if currentIndex == imagePaths.count - 1 {
+                showLastFileAlert()
+        }
     }
     
     // Move to the previous image in the folder
@@ -479,8 +573,79 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     
     //Handle when all images in folder are deleted
     private func hideNavigationButtons() {
-        setNavigationVisible(isHidden: true, buttons: navButtons)
+        setVisibility(isHidden: true, buttons: navButtons)
         chooseButton.isHidden = false
+        closeButton.isHidden = false
+    }
+    
+    
+    @objc func scanDirectory() {
+            let dialog = NSOpenPanel()
+            dialog.title = "Choose a directory to scan"
+            dialog.canChooseDirectories = true
+            dialog.canChooseFiles = false
+            dialog.allowsMultipleSelection = false
+
+            if dialog.runModal() == .OK {
+                if let url = dialog.url {
+                    print("Directory selected: \(url)")
+                    let scanner = ImageFolderScanModule()
+                    let foldersWithImages = scanner.scanForImageFolders(at: url)
+
+                    if foldersWithImages.isEmpty {
+                        showNoFoldersFoundMessage()
+                    } else {
+                        dropdownModule.updateDropdown(with: foldersWithImages, in: self.view)
+                    }
+                }
+            }
+        }
+    
+    // Method to open the folder and load images
+    func openFolderPath(at folderURL: URL) {
+        // Clear the existing images
+        imagePaths.removeAll()
+        currentIndex = 0
+            
+        // Load image files from the selected folder
+        loadImages(from: folderURL)
+        displayImage(at: currentIndex)
+                       
+        // Hide the "Open Folder" button and show navigation buttons
+        setVisibility(isHidden: true, buttons: homeButtons)
+        setVisibility(isHidden: false, buttons: navButtons)
+        dropdownModule.hideDropDown(in: self.view)
+
+        // Set CoreImageViewer as the first responder
+        DispatchQueue.main.async {
+                self.view.window?.makeFirstResponder(self)
+        }
+        
+    }
+    
+    private func showNoFoldersFoundMessage() {
+        let alert = NSAlert()
+        alert.messageText = "No folders with images found.\nOR\nScope too large.Choose smaller directory."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    @objc func openSelectedFolder() {
+        if let selectedFolder = dropdownModule.selectedFolderURL() {
+            openFolderPath(at: selectedFolder)
+        } else {
+            print("No folder selected.")
+        }
+    }
+    
+    private func showLastFileAlert() {
+        let alert = NSAlert()
+        alert.messageText = "End of Directory"
+        alert.informativeText = "You have reached the last file in the directory."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
 }

@@ -20,6 +20,9 @@
 		45364DF82C6F1F8C00740896 /* CoreImageViewerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364DF72C6F1F8C00740896 /* CoreImageViewerTests.swift */; };
 		45364E002C6F61F500740896 /* ZoomModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364DFF2C6F61F500740896 /* ZoomModule.swift */; };
 		45364E0A2C6FD2A800740896 /* RecentFoldersModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364E092C6FD2A800740896 /* RecentFoldersModule.swift */; };
+		45364E0E2C6FFA2500740896 /* GridDisplayModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364E0D2C6FFA2500740896 /* GridDisplayModule.swift */; };
+		45364E102C6FFAE900740896 /* ImageFolderScanModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45364E0F2C6FFAE900740896 /* ImageFolderScanModule.swift */; };
+		45B8F5EF2C72EE8B0052CE9D /* DropdownDisplayModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B8F5EE2C72EE8B0052CE9D /* DropdownDisplayModule.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +60,9 @@
 		45364DF72C6F1F8C00740896 /* CoreImageViewerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreImageViewerTests.swift; sourceTree = "<group>"; };
 		45364DFF2C6F61F500740896 /* ZoomModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomModule.swift; sourceTree = "<group>"; };
 		45364E092C6FD2A800740896 /* RecentFoldersModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentFoldersModule.swift; sourceTree = "<group>"; };
+		45364E0D2C6FFA2500740896 /* GridDisplayModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridDisplayModule.swift; sourceTree = "<group>"; };
+		45364E0F2C6FFAE900740896 /* ImageFolderScanModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageFolderScanModule.swift; sourceTree = "<group>"; };
+		45B8F5EE2C72EE8B0052CE9D /* DropdownDisplayModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropdownDisplayModule.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -117,6 +123,9 @@
 				45364DF32C6F096B00740896 /* ImageViewerModule.swift */,
 				45364DFF2C6F61F500740896 /* ZoomModule.swift */,
 				45364E092C6FD2A800740896 /* RecentFoldersModule.swift */,
+				45364E0D2C6FFA2500740896 /* GridDisplayModule.swift */,
+				45364E0F2C6FFAE900740896 /* ImageFolderScanModule.swift */,
+				45B8F5EE2C72EE8B0052CE9D /* DropdownDisplayModule.swift */,
 			);
 			path = PhotoAlbumViewer;
 			sourceTree = "<group>";
@@ -278,10 +287,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				45364E102C6FFAE900740896 /* ImageFolderScanModule.swift in Sources */,
 				45364E0A2C6FD2A800740896 /* RecentFoldersModule.swift in Sources */,
 				45364E002C6F61F500740896 /* ZoomModule.swift in Sources */,
 				45364DF02C6EFEC800740896 /* CoreImageViewer.swift in Sources */,
 				45364DF42C6F096B00740896 /* ImageViewerModule.swift in Sources */,
+				45B8F5EF2C72EE8B0052CE9D /* DropdownDisplayModule.swift in Sources */,
+				45364E0E2C6FFA2500740896 /* GridDisplayModule.swift in Sources */,
 				45364DF22C6F05D100740896 /* CoreImageViewerWrapper.swift in Sources */,
 				45364DC52C6EFDED00740896 /* PhotoAlbumViewerApp.swift in Sources */,
 			);
