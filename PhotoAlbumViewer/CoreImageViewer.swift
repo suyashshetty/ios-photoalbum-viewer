@@ -16,6 +16,8 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     var homeButtons:[NSButton] = []
     
     var noImagesLabel: NSTextField!
+    var scanDirectoryLabel: NSTextField!
+
     var folderIcon:NSImage!
     
     // Buttons
@@ -35,6 +37,9 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     private var zoomModule: ZoomModule?
     private var imageFolderScanner: ImageFolderScanModule?
     private var dropdownModule: DropdownDisplayModule!
+    
+    private var cache: TrieCacheModule!
+
     
     override func viewWillAppear() {
         super.viewWillAppear()
@@ -93,10 +98,14 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         let doubleClickRecognizer = NSClickGestureRecognizer(target: self, action: #selector(reloadImageOriginal))
         doubleClickRecognizer.numberOfClicksRequired = 2
         imageView.addGestureRecognizer(doubleClickRecognizer)
+
+        // Initialize the TrieCacheModule
+        cache = TrieCacheModule.loadFromDisk() ?? TrieCacheModule()
+        cache.invalidateCache() // Invalidate any outdated cache entries
         
         // Initialize the ZoomModule
         zoomModule = ZoomModule(imageView: imageView)
-        imageFolderScanner = ImageFolderScanModule()
+        imageFolderScanner = ImageFolderScanModule(trieCacheModule: cache)
         dropdownModule = DropdownDisplayModule()
     }
     
@@ -107,16 +116,17 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         // Initialize the "Open Folder" button
         initializeOpenFolderButton()
         
-        // Initialize the "Open Folder" button
+        // Initialize the "Scan Directory" UI
         initializeScanDirectoryButton()
-        
         setupButtonsView()
-        
-        // Initialize the navigation buttons
-        initializeNavigationButtons()
+
         
         //Initialize dropdown view
         initializeDropDown()
+        initializeScanDirectoryLabel() // maintain this init order to avaoid null pointer exception
+
+        // Initialize the navigation buttons
+        initializeNavigationButtons()
     }
     
     private func initializeNoImageLabel(){
@@ -153,9 +163,28 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         scanDirectoryButton = NSButton(title: "Scan Directory", target: self, action: #selector(scanDirectory))
         scanDirectoryButton.translatesAutoresizingMaskIntoConstraints = false
         self.view.addSubview(scanDirectoryButton)
-        homeButtons.append(scanDirectoryButton); //debug pending
+        homeButtons.append(scanDirectoryButton);
     }
     
+    private func initializeScanDirectoryLabel() {
+        scanDirectoryLabel = NSTextField(labelWithString: "Current Scan: ")
+        scanDirectoryLabel.font = NSFont.systemFont(ofSize: 14)
+        scanDirectoryLabel.alignment = .left
+        scanDirectoryLabel.translatesAutoresizingMaskIntoConstraints = false
+        scanDirectoryLabel.isHidden = true
+        view.addSubview(scanDirectoryLabel)
+  
+        if let dropdown = dropdownModule?.dropdown {
+            NSLayoutConstraint.activate([
+                scanDirectoryLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                scanDirectoryLabel.bottomAnchor.constraint(equalTo: dropdown.topAnchor, constant: -1)
+            ])
+        } else {
+            print("Dropdown is not initialized")
+        }
+    }
+
+
     private func setupButtonsView() {
 
         // Create a horizontal stack view to hold the buttons
@@ -272,19 +301,20 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         dropdownModule.dropdown.isHidden = dropdownModule.dropdown.numberOfItems <= 1
         dropdownModule.dropdown.action = #selector(dropdownSelectionChanged(_:))
     }
+
     
     @objc func dropdownSelectionChanged(_ sender: NSPopUpButton) {
-        if let selectedItem = sender.selectedItem {
-            let encodedPath = selectedItem.title.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? selectedItem.title
-            let fullPath = "file:///\(encodedPath)"
-            if let url = URL(string: fullPath) {
-                print("User selected debug: \(selectedItem.title), \(url)")
-                openFolderPath(at: url)
-            } else {
-                print("Invalid URL")
-            }
+        if let selectedItem = sender.selectedItem, let url = selectedItem.representedObject as? URL {
+            // Print the selected folder's URL for debugging
+            print("Selected folder URL: \(url)")
+            
+            // Open the folder at the selected URL
+            openFolderPath(at: url)
+        } else {
+            print("Invalid selection or no URL associated with the selection")
         }
     }
+
     
     @objc func openFolder() {
         let dialog = NSOpenPanel()
@@ -296,13 +326,13 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         
         if dialog.runModal() == .OK {
             if let url = dialog.url {
-                print("Folder selected: \(url)")
                 loadImages(from: url)
                 
                 // Hide the "Open Folder" button and show navigation buttons
                 setVisibility(isHidden: true, buttons: homeButtons)
                 setVisibility(isHidden: false, buttons: navButtons)
                 dropdownModule.hideDropDown(in: self.view)
+                scanDirectoryLabel.isHidden = true
             }
         }
         
@@ -321,6 +351,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         setVisibility(isHidden: true, buttons: navButtons)
         noImagesLabel?.isHidden = true
         dropdownModule.showDropDown(in : self.view)
+        scanDirectoryLabel.isHidden = false
         
         // Unset CoreImageViewer as the first responder
         DispatchQueue.main.async {
@@ -383,6 +414,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         
         // Determine if the image should scale based on width or height
         var targetSize: NSSize
+        
         if imageAspectRatio > viewAspectRatio {
             // Image is wider than the view, scale by width
             let scaledHeight = availableSize.width / imageAspectRatio
@@ -580,26 +612,41 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     
     
     @objc func scanDirectory() {
-            let dialog = NSOpenPanel()
-            dialog.title = "Choose a directory to scan"
-            dialog.canChooseDirectories = true
-            dialog.canChooseFiles = false
-            dialog.allowsMultipleSelection = false
+        let dialog = NSOpenPanel()
+        dialog.title = "Choose a directory to scan"
+        dialog.canChooseDirectories = true
+        dialog.canChooseFiles = false
+        dialog.allowsMultipleSelection = false
 
-            if dialog.runModal() == .OK {
-                if let url = dialog.url {
-                    print("Directory selected: \(url)")
-                    let scanner = ImageFolderScanModule()
-                    let foldersWithImages = scanner.scanForImageFolders(at: url)
+        if dialog.runModal() == .OK {
+            if let url = dialog.url {
+                scanDirectoryLabel.stringValue = "Current Scan: \(url.path)"
+                let scanner = ImageFolderScanModule(trieCacheModule: cache)
+                let foldersWithImages = scanner.scanForImageFolders(at: url)
 
-                    if foldersWithImages.isEmpty {
-                        showNoFoldersFoundMessage()
-                    } else {
-                        dropdownModule.updateDropdown(with: foldersWithImages, in: self.view)
-                    }
+                if foldersWithImages.isEmpty {
+                    showNoFoldersFoundMessage()
+                } else {
+                    dropdownModule.updateDropdown(with: foldersWithImages, baseURL: url, in: self.view)
+                    scanDirectoryLabel.isHidden = false
                 }
             }
         }
+    }
+    
+    
+    
+    // This method is triggered when a volume is selected for scanning
+    func scanDirectoryAt(at url: URL) {
+        let scanner = ImageFolderScanModule(trieCacheModule: cache)
+        let foldersWithImages = scanner.scanForImageFolders(at: url)
+
+        if foldersWithImages.isEmpty {
+            showNoFoldersFoundMessage()
+        } else {
+            dropdownModule.updateDropdown(with: foldersWithImages, baseURL: url, in: self.view)
+        }
+    }
     
     // Method to open the folder and load images
     func openFolderPath(at folderURL: URL) {
@@ -615,6 +662,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         setVisibility(isHidden: true, buttons: homeButtons)
         setVisibility(isHidden: false, buttons: navButtons)
         dropdownModule.hideDropDown(in: self.view)
+        scanDirectoryLabel.isHidden = true
 
         // Set CoreImageViewer as the first responder
         DispatchQueue.main.async {
@@ -633,6 +681,8 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
 
     @objc func openSelectedFolder() {
         if let selectedFolder = dropdownModule.selectedFolderURL() {
+            print("Selected : ", selectedFolder)
+
             openFolderPath(at: selectedFolder)
         } else {
             print("No folder selected.")
@@ -647,7 +697,15 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }
+    
+    
+    private func saveCacheToDisk() {
+        cache.saveToDisk()
+    }
 
+    private func loadCacheFromDisk() {
+        cache = TrieCacheModule.loadFromDisk() ?? TrieCacheModule()
+    }
 }
 
 

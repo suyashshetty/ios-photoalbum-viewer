@@ -22,12 +22,10 @@ class DropdownDisplayModule {
         
         // Safely add the dropdown to the view
         view.addSubview(dropdown)
-        
     }
 
-
-    // Update the dropdown with scanned folders
-    func updateDropdown(with folders: [URL], in view: NSView) {
+    // Update the dropdown with scanned folders and calculate display values
+    func updateDropdown(with folders: [URL], baseURL: URL, in view: NSView) {
         // Attempt to find the dropdown in the view hierarchy
         guard let dropdown = view.subviews.compactMap({ $0 as? NSPopUpButton }).first else {
             print("Dropdown not found in view hierarchy")
@@ -37,8 +35,19 @@ class DropdownDisplayModule {
         // Update the dropdown items
         dropdown.removeAllItems()
         dropdown.addItem(withTitle: "Select a folder")
+        
         folders.forEach { folder in
-            dropdown.addItem(withTitle: folder.path)
+            // Calculate the display value relative to the baseURL
+            var displayValue = folder.path.replacingOccurrences(of: baseURL.path, with: "")
+            
+            // If displayValue is blank, set it to "(Current Folder)"
+            if displayValue.isEmpty {
+                displayValue = "(Current Folder)"
+            }
+            
+            let menuItem = NSMenuItem(title: displayValue, action: nil, keyEquivalent: "")
+            menuItem.representedObject = folder
+            dropdown.menu?.addItem(menuItem)
         }
         
         // Set visibility based on the number of items in the dropdown
@@ -48,13 +57,15 @@ class DropdownDisplayModule {
     // Retrieve the selected folder URL
     func selectedFolderURL() -> URL? {
         guard let dropdown = dropdown, dropdown.indexOfSelectedItem > 0 else { return nil }
-        let selectedPath = dropdown.titleOfSelectedItem ?? ""
-        return URL(fileURLWithPath: selectedPath)
+        if let selectedItem = dropdown.selectedItem, let url = selectedItem.representedObject as? URL {
+            return url
+        }
+        return nil
     }
+
     
     public func hideDropDown(in view: NSView){
         guard let dropdown = view.subviews.compactMap({ $0 as? NSPopUpButton }).first else {
-            print("hide : Dropdown not found in view hierarchy")
             return
         }
         dropdown.isHidden = true
@@ -62,12 +73,8 @@ class DropdownDisplayModule {
     
     public func showDropDown(in view: NSView){
         guard let dropdown = view.subviews.compactMap({ $0 as? NSPopUpButton }).first else {
-            print("show : Dropdown not found in view hierarchy")
             return
         }
         dropdown.isHidden = dropdown.numberOfItems <= 1
     }
-    
-
 }
-
