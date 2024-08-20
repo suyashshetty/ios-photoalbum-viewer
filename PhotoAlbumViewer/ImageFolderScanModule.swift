@@ -3,10 +3,12 @@ import AppKit
 class FolderNode {
     var url: URL
     var subfolders: [FolderNode] = []
+    var imageCount: Int
     
-    init(url: URL, subfolders: [FolderNode]) {
+    init(url: URL, subfolders: [FolderNode] = [], imageCount: Int = 0) {
         self.url = url
         self.subfolders = subfolders
+        self.imageCount = imageCount
     }
     
     func addChild(_ node: FolderNode) {
@@ -14,11 +16,11 @@ class FolderNode {
     }
     
     func displayValue() -> String {
-            return url.lastPathComponent
+        return url.lastPathComponent
     }
-        
+    
     func programmaticValue() -> String {
-            return url.absoluteString
+        return url.absoluteString
     }
     
     func toString(indent: String = "") -> String {
@@ -139,7 +141,18 @@ class ImageFolderScanModule {
     }
     
     func convertTrieNodeToFolderNode(trieNode: TrieNode, basePath: String) -> FolderNode {
-        let folderNode = FolderNode(url: URL(fileURLWithPath: basePath), subfolders: [])
+        let fileManager = FileManager.default
+        let folderURL = URL(fileURLWithPath: basePath)
+        
+        // Count the number of image files in the current directory
+        let directoryContents = try? fileManager.contentsOfDirectory(at: folderURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+        let imageFiles = directoryContents?.filter { fileURL in
+            return imageExtensions.contains(fileURL.pathExtension.lowercased())
+        }
+        let imageCount = imageFiles?.count ?? 0
+        
+        // Initialize FolderNode with the calculated imageCount
+        let folderNode = FolderNode(url: folderURL, imageCount: imageCount)
         
         for (childName, childTrieNode) in trieNode.children {
             let childPath = basePath + "/" + childName
@@ -149,8 +162,8 @@ class ImageFolderScanModule {
         
         return folderNode
     }
-
-
+    
+    
     // Helper method to check if a URL is a directory
     private func isDirectory(_ url: URL) -> Bool {
         var isDir: ObjCBool = false

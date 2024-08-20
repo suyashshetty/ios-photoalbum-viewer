@@ -8,12 +8,15 @@ import Cocoa
  */
 class CoreImageViewer: NSViewController, NSWindowDelegate {
     
+    var splitView: NSSplitView!
+    var leftPanel: NSView!
+    var rightPanel: NSView!
+    
     var imageView: NSImageView!
     var imagePaths: [String] = []
     var currentIndex: Int = 0
     var modules: [ImageViewerModule] = []
     var navButtons: [NSButton] = []
-    var homeButtons:[NSButton] = []
     
     var noImagesLabel: NSTextField!
     var scanDirectoryLabel: NSTextField!
@@ -37,6 +40,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     private var zoomModule: ZoomModule?
     private var imageFolderScanner: ImageFolderScanModule?
     private var dropdownModule: DropdownDisplayModule!
+    private var treeViewModule: TreeViewModule!
     
     private var cache: TrieCacheModule!
 
@@ -84,16 +88,10 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // Set up the image view to cover the entire view
-        imageView = NSImageView(frame: self.view.bounds)
-        imageView.imageScaling = .scaleNone
-        imageView.autoresizingMask = [.width, .height]
-        self.view.addSubview(imageView)
-        
-        //Initialize UI components
-        initUIComponents()
-        
+
+        // Set up the main layout with left and right panels
+        setupMainLayout()
+
         // Add a double-click gesture recognizer to reload the image
         let doubleClickRecognizer = NSClickGestureRecognizer(target: self, action: #selector(reloadImageOriginal))
         doubleClickRecognizer.numberOfClicksRequired = 2
@@ -102,107 +100,153 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         // Initialize the TrieCacheModule
         cache = TrieCacheModule.loadFromDisk() ?? TrieCacheModule()
         cache.invalidateCache() // Invalidate any outdated cache entries
-        
+
         // Initialize the ZoomModule
         zoomModule = ZoomModule(imageView: imageView)
         imageFolderScanner = ImageFolderScanModule(trieCacheModule: cache)
         dropdownModule = DropdownDisplayModule()
     }
+
     
     private func initUIComponents(){
-        //Initialize error message label when no images are found
-        initializeNoImageLabel()
+        print("Initializing components in leftPanel")
+
+        // Initialize error message label when no images are found
+        initializeNoImageLabel(in: rightPanel)
         
         // Initialize the "Open Folder" button
-        initializeOpenFolderButton()
+        initializeOpenFolderButton(in: rightPanel)
         
         // Initialize the "Scan Directory" UI
-        initializeScanDirectoryButton()
-        setupButtonsView()
+        initializeScanDirectoryButton(in: leftPanel)
 
+        // Initialize dropdown view
+        initializeDropDown(in: leftPanel)
         
-        //Initialize dropdown view
-        initializeDropDown()
-        initializeScanDirectoryLabel() // maintain this init order to avaoid null pointer exception
+        // Initialize scan directory label
+        initializeScanDirectoryLabel(in: leftPanel) // maintain this init order to avoid null pointer exception
+        
+        // Initialize the tree view
+        initializeTreeView(in: leftPanel)
+        
+        //Initialize image view
+        initializeImageView(in: rightPanel)
 
         // Initialize the navigation buttons
         initializeNavigationButtons()
     }
+
+
     
-    private func initializeNoImageLabel(){
+    private func initializeSplitView() {
+        splitView = NSSplitView(frame: self.view.bounds)
+        splitView.dividerStyle = .thin
+        splitView.isVertical = true
+        splitView.autoresizingMask = [.width, .height]
+        
+        // Initialize left and right panels
+        leftPanel = NSView()
+        rightPanel = NSView()
+        
+        splitView.addSubview(leftPanel)
+        splitView.addSubview(rightPanel)
+        
+        self.view.addSubview(splitView)
+        
+        // Adjust the initial width of the left panel
+        leftPanel.frame.size.width = self.view.bounds.width * 0.3
+        rightPanel.frame.size.width = self.view.bounds.width * 0.7
+    }
+    
+    
+    private func setupMainLayout() {
+        // Create a horizontal split view
+        let splitView = NSSplitView(frame: self.view.bounds)
+        splitView.dividerStyle = .thin
+        splitView.isVertical = true
+        splitView.autoresizingMask = [.width, .height]
+        self.view.addSubview(splitView)
+
+        // Create the left panel
+        leftPanel = NSView(frame: NSRect(x: 0, y: 0, width: splitView.frame.width * 0.3, height: splitView.frame.height))
+        leftPanel.autoresizingMask = [.width, .height]
+        splitView.addSubview(leftPanel)
+
+        // Create the right panel
+        rightPanel = NSView(frame: NSRect(x: splitView.frame.width * 0.3, y: 0, width: splitView.frame.width * 0.7, height: splitView.frame.height))
+        rightPanel.autoresizingMask = [.width, .height]
+        splitView.addSubview(rightPanel)
+
+        // Initialize UI components in the left panel
+        initUIComponents()
+    }
+    
+    private func initializeImageView(in parentView: NSView) {
+        imageView = NSImageView(frame: parentView.bounds)
+        imageView.imageScaling = .scaleNone
+        imageView.autoresizingMask = [.width, .height]
+        parentView.addSubview(imageView)
+    }
+
+    private func initializeNoImageLabel(in parentView: NSView){
         // Initialize the "No Images Found" label
         noImagesLabel = NSTextField(labelWithString: "No image files found")
         noImagesLabel.font = NSFont.systemFont(ofSize: 24)
         noImagesLabel.alignment = .center
         noImagesLabel.isHidden = true
         noImagesLabel.translatesAutoresizingMaskIntoConstraints = false
-        self.view.addSubview(noImagesLabel)
+        parentView.addSubview(noImagesLabel)
         
         // Center the label in the view
         NSLayoutConstraint.activate([
-            noImagesLabel.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
-            noImagesLabel.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
+            noImagesLabel.centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
+            noImagesLabel.centerYAnchor.constraint(equalTo: parentView.centerYAnchor)
         ])
     }
     
-    private func initializeOpenFolderButton(){
+    private func initializeOpenFolderButton(in parentView: NSView){
         openFolderButton = NSButton(title: "Open Folder", target: self, action: #selector(openFolder))
         openFolderButton.translatesAutoresizingMaskIntoConstraints = false
-        self.view.addSubview(openFolderButton)
+        parentView.addSubview(openFolderButton)
         
-        // Position the "Open Folder" button at the center of the view
+        // Position the "Open Folder" button at the center of the chosen panel
         NSLayoutConstraint.activate([
-            openFolderButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
-            openFolderButton.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
+            openFolderButton.centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
+            openFolderButton.centerYAnchor.constraint(equalTo: parentView.topAnchor, constant: 50)
         ])
-        homeButtons.append(openFolderButton);
     }
+
     
-    private func initializeScanDirectoryButton(){
+    private func initializeScanDirectoryButton(in parentView: NSView){
         // Initialize the "Scan Directory" button
         scanDirectoryButton = NSButton(title: "Scan Directory", target: self, action: #selector(scanDirectory))
         scanDirectoryButton.translatesAutoresizingMaskIntoConstraints = false
-        self.view.addSubview(scanDirectoryButton)
-        homeButtons.append(scanDirectoryButton);
+        parentView.addSubview(scanDirectoryButton)
+        
+        // Position the "Open Folder" button at the center of the view
+        NSLayoutConstraint.activate([
+            scanDirectoryButton.centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
+            scanDirectoryButton.centerYAnchor.constraint(equalTo: parentView.topAnchor, constant: 50)
+        ])
     }
     
-    private func initializeScanDirectoryLabel() {
-        scanDirectoryLabel = NSTextField(labelWithString: "Current Scan: ")
+    private func initializeScanDirectoryLabel(in parentView: NSView) {
+        scanDirectoryLabel = NSTextField(wrappingLabelWithString: "Current Scan: ")
         scanDirectoryLabel.font = NSFont.systemFont(ofSize: 14)
         scanDirectoryLabel.alignment = .left
         scanDirectoryLabel.translatesAutoresizingMaskIntoConstraints = false
         scanDirectoryLabel.isHidden = true
-        view.addSubview(scanDirectoryLabel)
-  
+        parentView.addSubview(scanDirectoryLabel)
+
         if let dropdown = dropdownModule?.dropdown {
             NSLayoutConstraint.activate([
-                scanDirectoryLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                scanDirectoryLabel.bottomAnchor.constraint(equalTo: dropdown.topAnchor, constant: -1)
+                scanDirectoryLabel.centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
+                scanDirectoryLabel.bottomAnchor.constraint(equalTo: parentView.bottomAnchor, constant: -40),
+                //scanDirectoryLabel.widthAnchor.constraint(equalToConstant: 300) // Set width to 300 points
             ])
         } else {
             print("Dropdown is not initialized")
         }
-    }
-
-
-    private func setupButtonsView() {
-
-        // Create a horizontal stack view to hold the buttons
-        let buttonStackView = NSStackView(views: homeButtons)
-        buttonStackView.orientation = .horizontal
-        buttonStackView.distribution = .equalSpacing
-        buttonStackView.alignment = .centerY
-        buttonStackView.spacing = 20
-        buttonStackView.translatesAutoresizingMaskIntoConstraints = false
-
-        // Add the stack view to the view
-        view.addSubview(buttonStackView)
-
-        // Position the button stack view at the top of the view
-        NSLayoutConstraint.activate([
-            buttonStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            buttonStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 100)
-        ])
     }
 
     private func initializeNavigationButtons(){
@@ -216,27 +260,27 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         navButtons = [previousButton, nextButton, closeButton, chooseButton, trashButton]
         
         // Initialize and position buttons with default visibility
-        configureNavButtons(buttons: navButtons)
+        configureNavButtons(buttons: navButtons, in: rightPanel)
         
         // Position the navigation buttons
-        positionButtons(buttons: navButtons)
+        positionButtons(buttons: navButtons, in: rightPanel)
     }
     
-    private func configureNavButtons(buttons: [NSButton], isHidden: Bool = true) {
+    private func configureNavButtons(buttons: [NSButton], isHidden: Bool = true, in parentView: NSView) {
         for button in buttons {
             // Customize button appearance
             customizeButtonAppearance(button: button)
             
             // Add the button to the view
             button.translatesAutoresizingMaskIntoConstraints = false
-            self.view.addSubview(button)
+            //parentView.addSubview(button)
             
             // Set initial visibility for the button
             button.isHidden = isHidden
         }
     }
     
-    private func positionButtons(buttons: [NSButton]) {
+    private func positionButtons(buttons: [NSButton], in parentView: NSView) {
         let buttonCount = buttons.count
         guard buttonCount > 0 else { return }
         
@@ -250,12 +294,12 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         
         // Add the stack view to the view
-        self.view.addSubview(stackView)
+        parentView.addSubview(stackView)
         
         // Position the stack view at the bottom center of the view
         NSLayoutConstraint.activate([
-            stackView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
-            stackView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -20)
+            stackView.centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
+            stackView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor, constant: -20)
         ])
         
         // Make sure the buttons have equal widths
@@ -269,7 +313,8 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     func customizeButtonAppearance(button: NSButton) {
         button.wantsLayer = true
         button.layer?.backgroundColor = NSColor.darkGray.cgColor
-        button.layer?.cornerRadius = 5.0
+        // Increase the corner radius slightly to maintain a balanced look
+        button.layer?.cornerRadius = 6.0
         button.attributedTitle = NSAttributedString(
             string: button.title,
             attributes: [
@@ -284,15 +329,15 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         }
     }
     
-    private func initializeDropDown(){
+    private func initializeDropDown(in parentView: NSView){
         // Initialize the dropdown module and add it to the view
         dropdownModule = DropdownDisplayModule()
-        dropdownModule.initializeDropdown(in: self.view)
+        dropdownModule.initializeDropdown(in: parentView)
 
         // Set constraints for dropdown below the buttons
         dropdownModule?.dropdown.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            dropdownModule.dropdown.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            dropdownModule.dropdown.centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
             dropdownModule.dropdown.topAnchor.constraint(equalTo: scanDirectoryButton.bottomAnchor, constant: 20),
             dropdownModule.dropdown.widthAnchor.constraint(equalToConstant: 300)
         ])
@@ -300,6 +345,24 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         // Set visibility based on the number of items in the dropdown
         dropdownModule.dropdown.isHidden = dropdownModule.dropdown.numberOfItems <= 1
         dropdownModule.dropdown.action = #selector(dropdownSelectionChanged(_:))
+    }
+    
+    private func initializeTreeView(in parentView: NSView){
+        // Initialize the TreeViewModule
+        treeViewModule = TreeViewModule()
+        treeViewModule.initializeTreeView(in: parentView, target: self)
+        
+        // Set up constraints for the tree view below the dropdown
+        treeViewModule.treeView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            treeViewModule.treeView.centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
+            treeViewModule.treeView.topAnchor.constraint(equalTo: dropdownModule.dropdown.bottomAnchor, constant: 20),
+            treeViewModule.treeView.widthAnchor.constraint(equalToConstant: 400),
+            treeViewModule.treeView.heightAnchor.constraint(equalToConstant: 600)
+        ])
+        
+        treeViewModule.treeView.action = #selector(self.treeViewItemDidDoubleClick(_:))
+        treeViewModule.treeView.isHidden = true
     }
 
     
@@ -329,16 +392,21 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
                 loadImages(from: url)
                 
                 // Hide the "Open Folder" button and show navigation buttons
-                setVisibility(isHidden: true, buttons: homeButtons)
                 setVisibility(isHidden: false, buttons: navButtons)
-                dropdownModule.hideDropDown(in: self.view)
-                scanDirectoryLabel.isHidden = true
+                dropdownModule.hideDropDown(in: leftPanel)
+                
+                // Safely check the number of items in the dropdown
+                if let dropdown = dropdownModule.dropdown {
+                    scanDirectoryLabel.isHidden = dropdown.numberOfItems <= 1
+                } else {
+                    scanDirectoryLabel.isHidden = true
+                }
             }
         }
         
-        // Set CoreImageViewer as the first responder
+        // Set rightPanel as the first responder
         DispatchQueue.main.async {
-                self.view.window?.makeFirstResponder(self)
+            self.rightPanel.window?.makeFirstResponder(self.rightPanel)
         }
     }
     
@@ -347,15 +415,22 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         imagePaths = []
         imageView.image = nil
         
-        setVisibility(isHidden: false, buttons: homeButtons)
+        openFolderButton.isHidden = false
         setVisibility(isHidden: true, buttons: navButtons)
         noImagesLabel?.isHidden = true
-        dropdownModule.showDropDown(in : self.view)
-        scanDirectoryLabel.isHidden = false
+        dropdownModule.showDropDown(in : leftPanel)
         
-        // Unset CoreImageViewer as the first responder
+        // Safely check the number of items in the dropdown
+        if let dropdown = dropdownModule.dropdown {
+            scanDirectoryLabel.isHidden = dropdown.numberOfItems <= 1
+        } else {
+            scanDirectoryLabel.isHidden = true
+        }
+
+        
+        // Set rightPanel as the first responder
         DispatchQueue.main.async {
-            self.view.window?.makeFirstResponder(nil)
+            self.rightPanel.window?.makeFirstResponder(nil)
         }
     }
     
@@ -472,6 +547,8 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
             closeFolder()
         case "o":
             openFolder()
+        case "x":
+            closeFolder()
             // Add more cases here as needed
         default:
             break
@@ -501,21 +578,21 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     
     // Move to the previous image in the folder
     @objc func moveToPreviousImage() {
-        resetImageView() // Reset zoom and position
+        resetImageView(in: rightPanel) // Reset zoom and position
         currentIndex = max(currentIndex - 1, 0)
         displayImage(at: currentIndex)
     }
     
     // Move to the next image in the folder
     @objc func moveToNextImage() {
-        resetImageView() // Reset zoom and position
+        resetImageView(in: rightPanel) // Reset zoom and position
         currentIndex = min(currentIndex + 1, imagePaths.count - 1)
         displayImage(at: currentIndex)
     }
     
-    private func resetImageView() {
+    private func resetImageView(in parentView : NSView) {
         // Reset the image view's frame size to match the window bounds
-        imageView.frame = self.view.bounds
+        imageView.frame = parentView.bounds
         
         // Reset the image view's position to the top-left corner of the view
         imageView.frame.origin = NSPoint(x: 0, y: 0)
@@ -525,7 +602,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
     }
     
     @objc func reloadImageOriginal() {
-        resetImageView();// Reset zoom and position
+        resetImageView(in: rightPanel);// Reset zoom and position
         displayImage(at: currentIndex)
     }
     
@@ -617,6 +694,7 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         dialog.canChooseDirectories = true
         dialog.canChooseFiles = false
         dialog.allowsMultipleSelection = false
+        
 
         if dialog.runModal() == .OK {
             if let url = dialog.url {
@@ -626,27 +704,20 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
 
                 if foldersWithImages.isEmpty {
                     showNoFoldersFoundMessage()
+                    treeViewModule.treeView.isHidden = true
                 } else {
-                    dropdownModule.updateDropdown(with: foldersWithImages, baseURL: url, in: self.view)
+                    dropdownModule.updateDropdown(with: foldersWithImages, baseURL: url, in: leftPanel)
                     scanDirectoryLabel.isHidden = false
+                    // Update the TreeViewModule with the folder structure
+                    if let folderNodes = scanner.scanForFolderNodes(at: url) {
+                        treeViewModule.treeView.isHidden = false
+                        treeViewModule.updateTreeView(with: folderNodes, in: leftPanel)
+                    }
                 }
             }
         }
     }
-    
-    
-    
-    // This method is triggered when a volume is selected for scanning
-    func scanDirectoryAt(at url: URL) {
-        let scanner = ImageFolderScanModule(trieCacheModule: cache)
-        let foldersWithImages = scanner.scanForImageFolders(at: url)
 
-        if foldersWithImages.isEmpty {
-            showNoFoldersFoundMessage()
-        } else {
-            dropdownModule.updateDropdown(with: foldersWithImages, baseURL: url, in: self.view)
-        }
-    }
     
     // Method to open the folder and load images
     func openFolderPath(at folderURL: URL) {
@@ -658,15 +729,12 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         loadImages(from: folderURL)
         displayImage(at: currentIndex)
                        
-        // Hide the "Open Folder" button and show navigation buttons
-        setVisibility(isHidden: true, buttons: homeButtons)
         setVisibility(isHidden: false, buttons: navButtons)
-        dropdownModule.hideDropDown(in: self.view)
-        scanDirectoryLabel.isHidden = true
+        openFolderButton.isHidden = true
 
-        // Set CoreImageViewer as the first responder
+        // Set rightPanel as the first responder
         DispatchQueue.main.async {
-                self.view.window?.makeFirstResponder(self)
+            self.rightPanel.window?.makeFirstResponder(self.rightPanel)
         }
         
     }
@@ -695,17 +763,21 @@ class CoreImageViewer: NSViewController, NSWindowDelegate {
         alert.informativeText = "You have reached the last file in the directory."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
-        alert.runModal()
+        //alert.runModal()
     }
     
-    
-    private func saveCacheToDisk() {
-        cache.saveToDisk()
+    @objc func treeViewItemDidDoubleClick(_ sender: NSOutlineView) {
+        let clickedRow = sender.clickedRow
+        guard clickedRow >= 0, let clickedItem = sender.item(atRow: clickedRow) as? FolderNode else {
+            return
+        }
+
+        print("Double-clicked on: \(clickedItem.displayValue())")
+        print("Programmatic value of double-clicked item: \(clickedItem.programmaticValue())")
+
+        openFolderPath(at: clickedItem.url)
     }
 
-    private func loadCacheFromDisk() {
-        cache = TrieCacheModule.loadFromDisk() ?? TrieCacheModule()
-    }
 }
 
 
