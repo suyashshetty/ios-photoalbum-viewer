@@ -67,10 +67,10 @@ A macOS photo viewer app developed in Swift using Cocoa. This app allows users t
     - Double-click to reset the image to its original size.
 
 5. **Move to Trash:**
-    - Use the "Trash" button or press `Delete`/`Backspace` to move the current image to the trash with confirmation.
+    - Use the "Trash" button or press `Delete` to move the current image to the trash with confirmation.
   
 6. **Close Folder:**
-    - Click the "Close Folder" button or press `Command + C` to clear the images and return to the initial state.
+    - Click the "Close Folder" button to clear the images and return to the initial state.
 
 ## Implementation Details
 
